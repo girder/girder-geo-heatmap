@@ -2,7 +2,9 @@ import $ from 'jquery';
 import _ from 'underscore';
 
 import { wrap } from '@girder/core/utilities/PluginUtils';
+import CollectionsView from '@girder/core/views/body/CollectionsView.js';
 import HierarchyWidget from '@girder/core/views/widgets/HierarchyWidget.js';
+import UsersView from '@girder/core/views/body/UsersView.js';
 import View from '@girder/core/views/View';
 import { restRequest } from '@girder/core/rest';
 
@@ -10,6 +12,8 @@ import geo from 'geojs/geo.js';
 
 import GeoHeatmapWidgetTemplate from './GeoHeatmapWidget.pug';
 import './GeoHeatmapWidget.styl';
+
+/* HierarchyWidget */
 
 wrap(HierarchyWidget, 'render', function (render) {
     render.call(this);
@@ -23,14 +27,76 @@ wrap(HierarchyWidget, 'render', function (render) {
     });
 });
 
+wrap(HierarchyWidget, 'destroy', function (destroy) {
+    if (this.geoHeatmap) {
+        this.geoHeatmap.remove();
+        delete this.geoHeatmap;
+    }
+    destroy.call(this);
+});
+
+/* CollectionsView */
+
+wrap(CollectionsView, 'render', function (render) {
+    render.call(this);
+    if (this.geoHeatmap) {
+        this.geoHeatmap.remove();
+        delete this.geoHeatmap;
+    }
+    this.geoHeatmap = new GeoHeatmapWidget({
+        el: $('<div>').appendTo(this.parentView.$el.find('#g-app-body-container')),
+        parentView: this,
+        model: 'collection'
+    });
+});
+
+wrap(CollectionsView, 'destroy', function (destroy) {
+    if (this.geoHeatmap) {
+        this.geoHeatmap.remove();
+        delete this.geoHeatmap;
+    }
+    destroy.call(this);
+});
+
+/* UsersView */
+
+wrap(UsersView, 'render', function (render) {
+    render.call(this);
+    if (this.geoHeatmap) {
+        this.geoHeatmap.remove();
+        delete this.geoHeatmap;
+    }
+    this.geoHeatmap = new GeoHeatmapWidget({
+        el: $('<div>').appendTo(this.parentView.$el.find('#g-app-body-container')),
+        parentView: this,
+        model: 'user'
+    });
+});
+
+wrap(UsersView, 'destroy', function (destroy) {
+    if (this.geoHeatmap) {
+        this.geoHeatmap.remove();
+        delete this.geoHeatmap;
+    }
+    destroy.call(this);
+});
+
+/* GeoHeatmapWidget */
+
 var GeoHeatmapWidget = View.extend({
-    initialize: function () {
+    initialize: function (settings) {
         // if this is the all-collection or all-user view, then we would
         // switch this to enumerate the reachable list of collections or users
-        let parents = [{
-            type: this.parentView.parentModel.get('_modelType') || 'folder',
-            id: this.parentView.parentModel.id
-        }];
+        let parents = [];
+        if (settings && settings.model) {
+            parents.push({type: settings.model});
+        }
+        if (this.parentView.parentModel) {
+            parents.push({
+                type: this.parentView.parentModel.get('_modelType') || 'folder',
+                id: this.parentView.parentModel.id
+            });
+        }
         this.geometaItems = [];
         this.geometaBounds = {};
         let promises = [];
@@ -84,11 +150,11 @@ var GeoHeatmapWidget = View.extend({
         let promises = [];
         promises.push(new Promise((resolve, reject) => {
             restRequest({
-                url: 'folder',
-                data: {limit: 0, parentType: parent.type, parentId: parent.id}
+                url: parent.id ? 'folder' : parent.type,
+                data: {limit: 100000, parentType: parent.type, parentId: parent.id}
             }).done((result) => {
                 result.reduce((prom1, folder) => prom1.then(() => {
-                    return this.collectGeometa({type: 'folder', id: folder._id});
+                    return this.collectGeometa({type: parent.id ? 'folder' : parent.type, id: folder._id});
                 }), Promise.resolve()).then(() => {
                     resolve();
                     return null;
@@ -101,7 +167,7 @@ var GeoHeatmapWidget = View.extend({
             promises.push(new Promise((resolve, reject) => {
                 restRequest({
                     url: 'item/find/geometa',
-                    data: {limit: 0, folderId: parent.id}
+                    data: {limit: 100000, folderId: parent.id}
                 }).done((result) => {
                     result.forEach((item) => {
                         if (!item.geometa || !item.geometa.bounds || !item.geometa.bounds.coordinates) {
