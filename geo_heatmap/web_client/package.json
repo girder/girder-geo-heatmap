@@ -38,7 +38,8 @@
         "root": true,
         "rules": {
             "promise/no-native": "off",
-            "spaced-comment": "off"
+            "spaced-comment": "off",
+            "object-curly-spacing": "off"
         }
     },
     "pugLintConfig": {

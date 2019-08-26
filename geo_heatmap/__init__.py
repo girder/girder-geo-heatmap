@@ -1,6 +1,6 @@
-import girder.api.v1.item
+from pkg_resources import DistributionNotFound, get_distribution
 
-from girder import plugin
+import girder.api.v1.item
 from girder.api import access
 from girder.api.describe import Description, autoDescribeRoute
 from girder.api.rest import filtermodel
@@ -8,6 +8,14 @@ from girder.constants import AccessType, TokenScope
 from girder.exceptions import RestException
 from girder.models.folder import Folder
 from girder.models.item import Item as ItemModel
+from girder.plugin import GirderPlugin, getPlugin
+
+
+try:
+    __version__ = get_distribution(__name__).version
+except DistributionNotFound:
+    # package is not installed
+    pass
 
 
 class ItemResource(girder.api.v1.item.Item):
@@ -67,9 +75,11 @@ class ItemResource(girder.api.v1.item.Item):
             raise RestException('Invalid search mode.')
 
 
-class GirderPlugin(plugin.GirderPlugin):
+class GirderPlugin(GirderPlugin):
     DISPLAY_NAME = 'Geo Heatmap'
     CLIENT_SOURCE_PATH = 'web_client'
 
     def load(self, info):
+        getPlugin('geometa').load(info)
+
         ItemResource(info['apiRoot'])
