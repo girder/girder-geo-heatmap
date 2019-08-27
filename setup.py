@@ -25,6 +25,8 @@ def prerelease_local_scheme(version):
 
 setup(
     name='girder-geo-heatmap',
+    use_scm_version={'local_scheme': prerelease_local_scheme},
+    setup_requires=['setuptools-scm'],
     author='Kitware, Inc.',
     author_email='kitware@kitware.com',
     classifiers=[
@@ -50,7 +52,6 @@ setup(
     keywords='girder-plugin, geo_heatmap',
     packages=find_packages(exclude=['test', 'test.*']),
     url='https://github.com/girder/geo_heatmap',
-    use_scm_version={'local_scheme': prerelease_local_scheme},
     zip_safe=False,
     entry_points={
         'girder.plugin': [
