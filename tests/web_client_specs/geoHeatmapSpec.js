@@ -1,4 +1,4 @@
-/* globals girderTest, describe, it */
+/* globals girderTest, describe, it, waitsFor */
 
 girderTest.addScripts([
   '/static/built/plugins/geo_heatmap/plugin.min.js'
@@ -11,6 +11,9 @@ $(function () {
     it('create the admin user', function () {
       girderTest.createUser(
         'admin', 'admin@email.com', 'Admin', 'Admin', 'testpassword')();
+      waitsFor(function () {
+        return $('a.g-nav-link[g-target="admin"]').length > 0;
+      }, 'admin console link to load');
     });
   });
 });

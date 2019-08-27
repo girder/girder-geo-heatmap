@@ -3,6 +3,7 @@ import pytest
 from pytest_girder.web_client import runWebClientTest
 
 
+@pytest.mark.skip(reason='geojs packaging needs to be updated to work in the test environment')
 @pytest.mark.plugin('geo_heatmap')
 @pytest.mark.parametrize('spec', (
     'geoHeatmapSpec.js',
